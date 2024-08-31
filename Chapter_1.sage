@@ -4,6 +4,8 @@ import random
 import time
 import timeit
 
+from operator import itemgetter
+
 
 def sqrt_of_minus_three(p,debug=False):
     if debug:
@@ -12,7 +14,7 @@ def sqrt_of_minus_three(p,debug=False):
         print('{0} p = {1:>78}  # HEX\n'.format(' '*13, f'0x{p:X}'))  # HEX
 
     Zp = IntegerModRing(p)
-    
+
     if (p % 12) == 7:
         res = Zp(-3)^((p+1)/4)
         if debug:
@@ -31,27 +33,27 @@ def sqrt_of_minus_three(p,debug=False):
             #  1.1. generate random number z
             z    = ZZ.random_element(2, p, distribution='uniform')
             if debug:
-                print('             z  = {0:>78}  # random number       # DEC'.format(z))
-                print('             z  = {0:>78}  # random number       # HEX\n'.format(f'0x{z:X}'))
+                print('             z  = {0:>78}  # random number          # DEC'.format(z))
+                print('             z  = {0:>78}  # random number          # HEX\n'.format(f'0x{z:X}'))
 
             #  1.2. calculate z' = z^((p-1)/3)
             z_pr = Zp(z)^((p-1)/3)                 # z' = z^((p-1)/3)
             if debug:
-                print('             z\' = {0:>78}  # z\' = z^((p-1)/3)    # DEC'.format(Integer(z_pr)))
-                print('             z\' = {0:>78}  # z\' = z^((p-1)/3)    # HEX\n'.format(f'0x{Integer(z_pr):X}'))
+                print('             z\' = {0:>78}  # z\' = z^((p-1)/3)       # DEC'.format(Integer(z_pr)))
+                print('             z\' = {0:>78}  # z\' = z^((p-1)/3)       # HEX\n'.format(f'0x{Integer(z_pr):X}'))
 
             if z_pr != Zp(1):
                 res = Zp(2*z_pr + 1)                                                      # one of √-3 (mod p)
                 if debug:
                     print('          /* z\' ≠ 1 so z is a qubic non-residue */\n')
-                    print('             z  = {0:>78}  # qubic non-residue   # DEC'.format(z))
-                    print('             z  = {0:>78}  # qubic non-residue   # HEX\n'.format(f'0x{z:X}'))
+                    print('             z  = {0:>78}  # qubic non-residue      # DEC'.format(z))
+                    print('             z  = {0:>78}  # qubic non-residue      # HEX\n'.format(f'0x{z:X}'))
 
-                    print('             z\' = {0:>78}  # z\' = z^((p-1)/3)    # DEC'.format(Integer(z_pr)))
-                    print('             z\' = {0:>78}  # z\' = z^((p-1)/3)    # HEX\n'.format(f'0x{Integer(z_pr):X}'))
+                    print('             z\' = {0:>78}  # z\' = z^((p-1)/3)       # DEC'.format(Integer(z_pr)))
+                    print('             z\' = {0:>78}  # z\' = z^((p-1)/3)       # HEX\n'.format(f'0x{Integer(z_pr):X}'))
 
-                    print('    √-3 (mod p) = {0:>78}  # 2(z^((p-1)/3)) + 1  # DEC'.format(Integer(res)))
-                    print('    √-3 (mod p) = {0:>78}  # 2(z^((p-1)/3)) + 1  # HEX\n'.format(f'0x{Integer(res):X}'))
+                    print('    √-3 (mod p) = {0:>78}  # 2(z^((p-1)/3)) + 1     # DEC'.format(Integer(res)))
+                    print('    √-3 (mod p) = {0:>78}  # 2(z^((p-1)/3)) + 1     # HEX\n'.format(f'0x{Integer(res):X}'))
 
                     print('   -√-3 (mod p) = {0:>78}  # the other √-3 (mod p)  # DEC'.format(Integer(-res)))
                     print('   -√-3 (mod p) = {0:>78}  # the other √-3 (mod p)  # HEX\n'.format(f'0x{Integer(-res):X}'))
@@ -64,7 +66,7 @@ def sqrt_of_minus_three(p,debug=False):
 #
 #  Example: find_ec_orders_SEA(p = 2^256 + 2^56 + 2^44 + 1, seed_a = 123456, time_it=False)
 #
-def find_ec_orders_SEA(p, seed_a, time_it=False, debug=False):
+def find_ec_orders_SEA(p, seed_a, random_a=True, time_it=False, debug=False):
 
     if time_it:
         debug = False
@@ -77,8 +79,13 @@ def find_ec_orders_SEA(p, seed_a, time_it=False, debug=False):
     if not time_it:
         EC = []
 
+    a = 0
     while True:
-        a = random.randrange(1,2^30)
+        if random_a:
+            a = random.randrange(1,2^30)          # y² = x³ + a
+        else:
+            a += 1                                # y² = x³ + a
+
         E = EllipticCurve(GF(p),[0,0,0,0,a])
 
         # https://doc.sagemath.org/html/en/reference/arithmetic_curves/sage/schemes/elliptic_curves/ell_finite_field.html#sage.schemes.elliptic_curves.ell_finite_field.EllipticCurve_finite_field.cardinality_pari
@@ -102,7 +109,8 @@ def find_ec_orders_SEA(p, seed_a, time_it=False, debug=False):
 
         if len(orders) == 6:
             if not time_it:
-                print('\nThe six orders (DEC) associated with Ɛₚ are:\n')
+                EC = sorted(EC,key=itemgetter(1))                                # sort a list of tuples by 2-nd item
+                print('\nThe six SORTED orders (DEC) associated with Ɛₚ are:\n')
                 print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(EC[0][1], EC[0][0], ' :  prime' if is_prime(EC[0][1]) else ''))
                 print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(EC[1][1], EC[1][0], ' :  prime' if is_prime(EC[1][1]) else ''))
                 print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(EC[2][1], EC[2][0], ' :  prime' if is_prime(EC[2][1]) else ''))
@@ -110,13 +118,13 @@ def find_ec_orders_SEA(p, seed_a, time_it=False, debug=False):
                 print('          #𝐸ₐ,₄ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(EC[4][1], EC[4][0], ' :  prime' if is_prime(EC[4][1]) else ''))
                 print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(EC[5][1], EC[5][0], ' :  prime' if is_prime(EC[5][1]) else ''))
 
-                print('The six orders (HEX) associated with Ɛₚ are:\n')
+                print('The six SORTED orders (HEX) associated with Ɛₚ are:\n')
                 print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{EC[0][1]:X}', EC[0][0], ' :  prime' if is_prime(EC[0][1]) else ''))
                 print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{EC[1][1]:X}', EC[1][0], ' :  prime' if is_prime(EC[1][1]) else ''))
                 print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{EC[2][1]:X}', EC[2][0], ' :  prime' if is_prime(EC[2][1]) else ''))
                 print('          #𝐸ₐ,₃ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{EC[3][1]:X}', EC[3][0], ' :  prime' if is_prime(EC[3][1]) else ''))
                 print('          #𝐸ₐ,₄ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{EC[4][1]:X}', EC[4][0], ' :  prime' if is_prime(EC[4][1]) else ''))
-                print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(f'0x{EC[5][1]:X}', EC[5][0], ' :  prime' if is_prime(EC[5][1]) else ''))
+                print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(f'0x{EC[5][1]:X}', EC[5][0], ' :  prime' if is_prime(EC[5][1]) else ''), flush=True)
 
                 if debug:
                     print('\nPrint parameters \'a\' and their corresponding Elliptic Curves:\n')
@@ -128,7 +136,7 @@ def find_ec_orders_SEA(p, seed_a, time_it=False, debug=False):
                         print(' order = {0:>78}  # DEC'.format(EC[i][1]))
                         print(' order = {0:>78}  # HEX'.format(f'0x{EC[i][1]:X}'))
                         print('-' * 9, flush=True)
-            break
+            return orders
 
 
 
@@ -172,13 +180,13 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
         print('              X = {0:>78}  # X from diophantine equation X² + 3*Y² = p  # DEC'.format(X))             # DEC
         print('              X = {0:>78}  # X from diophantine equation X² + 3*Y² = p  # HEX\n'.format(f'0x{X:X}'))  # HEX
     
-    #  2.2. correct sign of X so X ≡ 1 (mod p)
+    #  2.2. correct sign of X so X ≡ 1 (mod 3)
 
     if X % 3 != 1:
-        X = p - X
+        X = -X
     if debug:
-        print('              X = {0:>78}  # X ≡ 1 (mod p)       # DEC'.format(X))             # DEC
-        print('              X = {0:>78}  # X ≡ 1 (mod p)       # HEX\n'.format(f'0x{X:X}'))  # HEX
+        print('              X = {0:>78}  # X ≡ 1 (mod 3)       # DEC'.format(X))             # DEC
+        print('              X = {0:>78}  # X ≡ 1 (mod 3)       # HEX\n'.format(f'0x{X:X}'))  # HEX
 
     #  3. calculate binomial coefficient ((p-1)/2 (p-1)/6) (mod p)
 
@@ -269,7 +277,28 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
         if Integer(R_a_p[i]) <= (p//2):
             E_a[i] += p
     if not time_it:
-        print('The six orders (DEC) associated with Ɛₚ are:\n')
+        if debug:
+            print('The six orders (DEC) associated with Ɛₚ are:\n')
+            print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[0], Rap_to_a[R_a_p[0]], ' :  prime' if is_prime(E_a[0]) else ''))
+            print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[1], Rap_to_a[R_a_p[1]], ' :  prime' if is_prime(E_a[1]) else ''))
+            print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[2], Rap_to_a[R_a_p[2]], ' :  prime' if is_prime(E_a[2]) else ''))
+            print('          #𝐸ₐ,₃ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[3], Rap_to_a[R_a_p[3]], ' :  prime' if is_prime(E_a[3]) else ''))
+            print('          #𝐸ₐ,₄ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[4], Rap_to_a[R_a_p[4]], ' :  prime' if is_prime(E_a[4]) else ''))
+            print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(E_a[5], Rap_to_a[R_a_p[5]], ' :  prime' if is_prime(E_a[5]) else ''))
+
+            print('The six orders (HEX) associated with Ɛₚ are:\n')
+            print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[0]:X}', Rap_to_a[R_a_p[0]], ' :  prime' if is_prime(E_a[0]) else ''))
+            print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[1]:X}', Rap_to_a[R_a_p[1]], ' :  prime' if is_prime(E_a[1]) else ''))
+            print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[2]:X}', Rap_to_a[R_a_p[2]], ' :  prime' if is_prime(E_a[2]) else ''))
+            print('          #𝐸ₐ,₃ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[3]:X}', Rap_to_a[R_a_p[3]], ' :  prime' if is_prime(E_a[3]) else ''))
+            print('          #𝐸ₐ,₄ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[4]:X}', Rap_to_a[R_a_p[4]], ' :  prime' if is_prime(E_a[4]) else ''))
+            print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(f'0x{E_a[5]:X}', Rap_to_a[R_a_p[5]], ' :  prime' if is_prime(E_a[5]) else ''), flush=True)
+
+        zipped_pairs = zip(E_a,R_a_p)                # The purpose of zip() is to map a similar index of multiple containers
+                                                     # so that they can be used just using as a single entity (list of tuples)
+        R_a_p = [x for _,x in sorted(zipped_pairs)]
+        E_a.sort()                                   # sort E_a list in place
+        print('The six SORTED orders (DEC) associated with Ɛₚ are:\n')
         print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[0], Rap_to_a[R_a_p[0]], ' :  prime' if is_prime(E_a[0]) else ''))
         print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[1], Rap_to_a[R_a_p[1]], ' :  prime' if is_prime(E_a[1]) else ''))
         print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[2], Rap_to_a[R_a_p[2]], ' :  prime' if is_prime(E_a[2]) else ''))
@@ -277,7 +306,7 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
         print('          #𝐸ₐ,₄ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(E_a[4], Rap_to_a[R_a_p[4]], ' :  prime' if is_prime(E_a[4]) else ''))
         print('          #𝐸ₐ,₅ = {0:>78}  #  y² = x³ + {1:>10} {2}\n'.format(E_a[5], Rap_to_a[R_a_p[5]], ' :  prime' if is_prime(E_a[5]) else ''))
 
-        print('The six orders (HEX) associated with Ɛₚ are:\n')
+        print('The six SORTED orders (HEX) associated with Ɛₚ are:\n')
         print('          #𝐸ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[0]:X}', Rap_to_a[R_a_p[0]], ' :  prime' if is_prime(E_a[0]) else ''))
         print('          #𝐸ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[1]:X}', Rap_to_a[R_a_p[1]], ' :  prime' if is_prime(E_a[1]) else ''))
         print('          #𝐸ₐ,₂ = {0:>78}  #  y² = x³ + {1:>10} {2}'.format(f'0x{E_a[2]:X}', Rap_to_a[R_a_p[2]], ' :  prime' if is_prime(E_a[2]) else ''))
@@ -292,7 +321,7 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
         for i in range(0,6):
             E_a_factors[i] = ecm.factor(E_a[i])
         if debug:
-            print('#𝐸ₐ,ᵢ prime factors are:\n')
+            print('Prime factors of SORTED orders #𝐸ₐ,ᵢ are:\n')
             print('  #𝐸ₐ,₀ factors = {0:>100}  # DEC'.format(f'{E_a_factors[0]}'))
             print('  #𝐸ₐ,₁ factors = {0:>100}  # DEC'.format(f'{E_a_factors[1]}'))
             print('  #𝐸ₐ,₂ factors = {0:>100}  # DEC'.format(f'{E_a_factors[2]}'))
@@ -302,13 +331,14 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
 
             #  7.1 Their HIGHEST prime factors are:
 
-            print(f'#𝐸ₐ,ᵢ HIGHEST prime factors are:\n')
+            print(f'HIGHEST prime factors of SORTED orders #𝐸ₐ,ᵢ are:\n')
             print(f'  #𝐸ₐ,₀ highest = {max(E_a_factors[0]):>78}  # DEC')
             print(f'  #𝐸ₐ,₁ highest = {max(E_a_factors[1]):>78}  # DEC')
             print(f'  #𝐸ₐ,₂ highest = {max(E_a_factors[2]):>78}  # DEC')
             print(f'  #𝐸ₐ,₃ highest = {max(E_a_factors[3]):>78}  # DEC')
             print(f'  #𝐸ₐ,₄ highest = {max(E_a_factors[4]):>78}  # DEC')
             print(f'  #𝐸ₐ,₅ highest = {max(E_a_factors[5]):>78}  # DEC\n', flush=True)
+    return E_a
 
 
 
@@ -332,7 +362,7 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
 #    
 #       Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763, repetitions=5, loops=10, time_it=True)
 #
-def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234567890, repetitions=3, loops=10, time_it=False, debug=False):
+def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234567890, random_a=True, repetitions=3, loops=10, time_it=False, debug=False):
 
     if p_start < 0 or p_stop < p_start:
         print(f'p_start = {p_start:>79}')
@@ -375,10 +405,10 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
 
                 # SEA
                 #start = time.time()
-                print('find_ec_orders_SEA(p = {0:>68}, seed = {1}, time_it = True):\n'.format(f'0x{p:X}', seed_a))
+                print('find_ec_orders_SEA(p = {0:>68}, seed = {1}, random_a = True, time_it = True):\n'.format(f'0x{p:X}', seed_a))
                 precision = int(6)
                 best = sage.misc.sage_timeit.sage_timeit(
-                    'find_ec_orders_SEA(p, seed_a, time_it=True)',
+                    'find_ec_orders_SEA(p, seed_a, random_a=True, time_it=True)',
                     globals(),
                     preparse=False,
                     number=loops,
@@ -393,10 +423,10 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                 print('\n-----\n\n', flush=True)
 
                 # Our method
-                print('find_ec_orders_BM(p = {0:>68}, seed = {1}, time_it = True):\n'.format(f'0x{p:X}', seed_a))
+                print('find_ec_orders_BM(p = {0:>68}, seed = {1}, random_a = True, time_it = True):\n'.format(f'0x{p:X}', seed_a))
                 precision = int(4)
                 best = sage.misc.sage_timeit.sage_timeit(
-                    'find_ec_orders_BM(p, seed_a, time_it=True)',
+                    'find_ec_orders_BM(p, seed_a, random_a=True, time_it=True)',
                     globals(),
                     preparse=False,
                     number=loops,
@@ -407,11 +437,15 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                 stats = (loops, repetitions, precision, best * scaling[order], units[order]) # use scaling because 'best' is in seconds
                 print(sage.misc.sage_timeit.SageTimeitResult(stats), flush=True)
             else:
-                print('find_ec_orders_SEA(p = {0:>68}, seed = {1}, time_it = False, debug = {2}):\n'.format(f'0x{p:X}', seed_a, debug))
-                find_ec_orders_SEA(p, seed_a, time_it=False, debug=debug)
+                print('find_ec_orders_SEA(p = {0:>68}, seed = {1}, random_a = {2}, time_it = False, debug = {3}):\n'.format(f'0x{p:X}', seed_a, random_a, debug))
+                orders_SEA = find_ec_orders_SEA(p, seed_a, random_a=random_a, time_it=False, debug=debug)
                 print('\n===\n\n')
-                print('find_ec_orders_BM(p = {0:>68}, seed = {1}, time_it = False, debug = {2}):\n'.format(f'0x{p:X}', seed_a, debug))
-                find_ec_orders_BM(p, seed_a, time_it=False, debug=debug)
+                print('find_ec_orders_BM(p = {0:>68}, seed = {1}, random_a = {2}, time_it = False, debug = {3}):\n'.format(f'0x{p:X}', seed_a, random_a, debug))
+                orders_BM = find_ec_orders_BM(p, seed_a, random_a=random_a, time_it=False, debug=debug)
+                if set(orders_SEA) != set(orders_BM):
+                    print(f'orders_SEA = {orders_SEA}\n')
+                    print(f' orders_BM = {orders_BM}\n')
+                    raise Exception("Not matching orders between the SEA and BM methods!!!")
             print(tests_delimiter, flush=True)
             break
 
@@ -436,17 +470,16 @@ print('/{0}/\n\n'.format('*'*94))
 # Сравнение на резултатите за редовете на 10 фамилии елиптични криви (различни p, p ≡ 1 (mod 12)) спрямо получените чрез алгоритъма SEA
 
 print('\n# Сравнение на резултатите за редовете на 10 фамилии елиптични криви (различни p, p ≡ 1 (mod 12)) спрямо получените чрез алгоритъма SEA\n')
-Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763, repetitions= 1, loops=1, time_it=False, debug=False)
+Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763, random_a=True, repetitions= 1, loops=1, time_it=False, debug=False)
 
 
 # Сравнение на резултата за редовете на 1 фамилия елиптични криви спрямо алгоритъма SEA (сиида е подбран така, че във фамилията криви да има прост ред)
 
 print('\n# Сравнение на резултата за редовете на 1 фамилия елиптични криви спрямо алгоритъма SEA (сиида е подбран така, че във фамилията криви да има прост ред)\n')
-Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=183,  repetitions=1, loops=1, time_it=False, debug=False)
+Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=183, random_a=True, repetitions=1, loops=1, time_it=False, debug=False)
 
 
 # Section 1.4.3 Сравнение на ефективността спрямо алгоритъма SEA
 
 print('\n# Section 1.4.3 Сравнение на ефективността спрямо алгоритъма SEA\n')
-Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763, repetitions=10, loops=3, time_it=True, debug=False)
-
+Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763, random_a=True, repetitions=10, loops=3, time_it=True, debug=False)
