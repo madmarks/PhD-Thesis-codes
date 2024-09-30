@@ -18,8 +18,8 @@ def sqrt_of_minus_one(p,debug=False):
         res = Zp(2)^((p-1)/4)
         if debug:
             print('    /* deterministic approach: p ≡ 5 (mod 8) */\n')
-            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # DEC'.format(Integer(res)))              # √-1 (mod p) DEC
-            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # HEX\n'.format(f'0x{Integer(res):X}'))   # √-1 (mod p) HEX
+            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # DEC'.format(Integer(res)))              #  √-1 (mod p) DEC
+            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # HEX\n'.format(f'0x{Integer(res):X}'))   #  √-1 (mod p) HEX
             print('   -√-1 (mod p) = {0:>78}  # the other √-1 (mod p)  # DEC'.format(Integer(-res)))             # -√-1 (mod p) DEC
             print('   -√-1 (mod p) = {0:>78}  # the other √-1 (mod p)  # HEX\n'.format(f'0x{Integer(-res):X}'))  # -√-1 (mod p) HEX
             print('\n/********************************/\n')
@@ -28,8 +28,8 @@ def sqrt_of_minus_one(p,debug=False):
         res = Zp(3)^((p-1)/4)
         if debug:
             print('    /* deterministic approach: p ≡ 17 (mod 24) */\n')
-            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # DEC'.format(Integer(res)))              # √-1 (mod p) DEC
-            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # HEX\n'.format(f'0x{Integer(res):X}'))   # √-1 (mod p) HEX
+            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # DEC'.format(Integer(res)))              #  √-1 (mod p) DEC
+            print('    √-1 (mod p) = {0:>78}  # one of √-1 (mod p)     # HEX\n'.format(f'0x{Integer(res):X}'))   #  √-1 (mod p) HEX
             print('   -√-1 (mod p) = {0:>78}  # the other √-1 (mod p)  # DEC'.format(Integer(-res)))             # -√-1 (mod p) DEC
             print('   -√-1 (mod p) = {0:>78}  # the other √-1 (mod p)  # HEX\n'.format(f'0x{Integer(-res):X}'))  # -√-1 (mod p) HEX
             print('\n/********************************/\n')
@@ -70,10 +70,6 @@ def sqrt_of_minus_one(p,debug=False):
 
 
 
-###
-#
-#  Example: find_ec_orders_SEA(p = 2^224 - 2^96 + 1, seed_a = 123456, time_it=False)
-#
 def find_ec_orders_SEA(p, seed_a, random_a=True, time_it=False, debug=False):
 
     if time_it:
@@ -125,7 +121,7 @@ def find_ec_orders_SEA(p, seed_a, random_a=True, time_it=False, debug=False):
             if time_it:
                 return orders
             else:
-                EC = sorted(EC,key=itemgetter(0))                                  # sort a list of tuples by 1-st item
+                EC = sorted(EC,key=itemgetter(0))                                 # sort a list of tuples by 1-st item
                 print('\nThe four SORTED orders (DEC) associated with 𝒟ₚ are:\n')
                 print('          #𝐷ₐ,₀ = {0:>78}  #  y² = x³ + {1:>10}*x'.format(EC[0][0], EC[0][1]))
                 print('          #𝐷ₐ,₁ = {0:>78}  #  y² = x³ + {1:>10}*x'.format(EC[1][0], EC[1][1]))
@@ -234,7 +230,8 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
             if R not in Rap_to_a.keys():
                 Rap_to_a[R] = a
 
-    #  4.2. calculate the least non-negative residues 𝓡(a,p) of congruence 1.7 (use multiplier a^((p-1)/4) as ±1, ±√-1)
+    #  4.2. calculate the least non-negative residues 𝓡(a,p) of congruence 2.3
+    #       (use multiplier a^((p-1)/4) as ±1 and ±√-1)
 
     R_a_p = [None] * 4
     R_a_p[0] = Zp(-1)*binom_coeff*Zp(+1)
@@ -347,22 +344,12 @@ def find_ec_orders_BM(p, seed_z=1234567890, random_a=True, factorize_orders=Fals
 ###
 #   
 #   1. init random number generator with fixed seed
-#   2. generate random prime p ≡ 1 (mod 4) to compare worse case
-#      (probabilistic approach to find √-1 (mod p))
-#   3. generate random a until find all four possible cardinalities
+#   2. generate random prime p ≡ 1 (mod 4), p ≢ 5 (mod 8) and p ≢ 17 (mod 24)
+#      to compare the worse case (probabilistic approach to find √-1 (mod p))
+#   3. generate random 'a' until find all four possible cardinalities
 #   4. go to step 1
 #
 #   Seed must be between 0 and 2^32-1
-#
-#   Examples:
-#
-#       Compare_SEA_and_Our_method(time_it=False)
-#
-#       Compare_SEA_and_Our_method(seed=23232323, time_it=False)
-#
-#       Use the following to repeat the results in Section 1.4.3:
-#    
-#       Compare_SEA_and_Our_method(times=10, p_start=2**256, p_stop=2**257, seed=123456763,  repetitions=5, loops=10, time_it=True)
 #
 def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234567890, random_a=True, repetitions=3, loops=10, time_it=False, debug=False):
 
@@ -388,6 +375,14 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                 #print('p ≢ 1 (mod 4)\n'.format(p))
                 continue
 
+            if (p % 8) == 5:
+                #print('p ≡ 5 (mod 8)\n'.format(p))
+                continue
+
+            if (p % 24) == 17:
+                #print('p ≡ 17 (mod 24)\n'.format(p))
+                continue
+
             if not is_prime(p):
                 #print('p is NOT prime\n'.format(p))
                 continue
@@ -409,7 +404,7 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                 #start = time.time()
                 print('find_ec_orders_SEA(p = {0:>68}, seed_a = {1}, random_a = True, time_it = True):\n'.format(f'0x{p:X}', seed_a))
                 precision = int(6)
-                best = sage.misc.sage_timeit.sage_timeit(
+                best_SEA = sage.misc.sage_timeit.sage_timeit(
                     'find_ec_orders_SEA(p, seed_a, random_a=True, time_it=True)',
                     globals(),
                     preparse=False,
@@ -418,7 +413,7 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                     precision=precision,
                     seconds=True
                 )
-                stats = (loops, repetitions, precision, best * scaling[order], units[order]) # use scaling because 'best' is in seconds
+                stats = (loops, repetitions, precision, best_SEA * scaling[order], units[order]) # use scaling because 'best_SEA' is in seconds
                 print(sage.misc.sage_timeit.SageTimeitResult(stats))
                 #end = time.time()
                 #print('\nExecution time of test: {0} seconds'.format(end - start))
@@ -427,7 +422,7 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                 # Our method
                 print('find_ec_orders_BM(p = {0:>68}, seed_z = {1}, random_a = True, time_it = True):\n'.format(f'0x{p:X}', seed_a))
                 precision = int(4)
-                best = sage.misc.sage_timeit.sage_timeit(
+                best_BM = sage.misc.sage_timeit.sage_timeit(
                     'find_ec_orders_BM(p, seed_a, random_a=True, time_it=True)',
                     globals(),
                     preparse=False,
@@ -436,8 +431,11 @@ def Compare_SEA_and_Our_method(times=1, p_start=2**256, p_stop=2**257, seed=1234
                     precision=precision,
                     seconds=True
                 )
-                stats = (loops, repetitions, precision, best * scaling[order], units[order]) # use scaling because 'best' is in seconds
+                stats = (loops, repetitions, precision, best_BM * scaling[order], units[order]) # use scaling because 'best_BM' is in seconds
                 print(sage.misc.sage_timeit.SageTimeitResult(stats), flush=True)
+
+                print('\n-----\n\n')
+                print('SEA is around {0} times slower'.format(math.floor(best_SEA//best_BM)))
             else:
                 print('find_ec_orders_SEA(p = {0:>68}, seed_a = {1}, random_a = {2}, time_it = False, debug = {3}):\n'.format(f'0x{p:X}', seed_a, random_a, debug))
                 orders_SEA, a_SEA = find_ec_orders_SEA(p, seed_a, random_a=random_a, time_it=False, debug=debug)
